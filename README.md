@@ -38,7 +38,7 @@ $ npm install -g @kinotic/zapai-cli
 $ zapai COMMAND
 running command...
 $ zapai (--version)
-@kinotic/zapai-cli/0.1.0 darwin-arm64 node-v22.13.1
+@kinotic/zapai-cli/0.1.1 darwin-arm64 node-v22.13.1
 $ zapai --help [COMMAND]
 USAGE
   $ zapai COMMAND

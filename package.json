@@ -1,7 +1,7 @@
 {
   "name": "@kinotic/zapai-cli",
   "description": "The CLI to help you move fast!",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "author": "Navid Mitchell",
   "bin": {
     "zapai": "./bin/run.js"
@@ -59,7 +59,7 @@
     "/dist",
     "/oclif.manifest.json"
   ],
-  "homepage": "https://github.com/Kinotic-Foundation/continuum-framework/tree/develop/continuum-js/z-cli",
+  "homepage": "https://github.com/Kinotic-Foundation/zapai-cli",
   "keywords": [
     "AI",
     "OpenAI",
