@@ -10,7 +10,7 @@ import '../../internal/tools/FileTool.js' // Import to register tools in toolReg
 export default class Chat extends BaseGrokCommand {
   static description = `
 Start an interactive chat session with Grok 3, an AI assistant from xAI...
-` // Keep full description
+`
   static examples = [
     '$ z grok chat',
     'Start a chat session, resuming the active conversation or creating a new one if none exists.',
