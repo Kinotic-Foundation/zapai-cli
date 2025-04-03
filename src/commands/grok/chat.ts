@@ -1,364 +1,63 @@
-import { input, select } from '@inquirer/prompts'
 import { Flags } from '@oclif/core'
 import chalk from 'chalk'
-import { glob } from 'glob'
-import { dirname, resolve } from 'path'
-import { readdirSync } from 'fs'
-import { homedir } from 'os'
-import { Page } from 'puppeteer'
-import { ConfigGrok, loadGrokConfig, saveGrokConfig } from '../../internal/state/ConfigGrok.js'
-import { GrokTool, toolRegistry } from '../../internal/tools/GrokTool.js'
-import { ChatStreamer } from '../../internal/utils/ChatStreamer.js'
-import { FileUploader } from '../../internal/utils/FileUploader.js'
-import { ConversationManager } from '../../internal/utils/ConversationManager.js'
+import { ChatController } from '../../internal/chat/ChatController.js'
+import { CommandRegistry } from '../../internal/chat/CommandRegistry.js'
+import { MenuHandler } from '../../internal/chat/MenuHandler.js'
 import { BaseGrokCommand } from '../../internal/BaseGrokCommand.js'
-import fileSelector from 'inquirer-file-selector'
-import '../../internal/tools/FileTool.js'
+import '../../internal/tools/FileTool.js' // Import to register tools in toolRegistry
 
+// CLI command to start an interactive Grok chat session
 export default class Chat extends BaseGrokCommand {
-    static description = `
-Start an interactive chat session with Grok 3, an AI assistant from xAI. This command opens a browser session to grok.com, allowing real-time interaction with Grok. You can upload files, enable tools, save/load conversation states, and switch conversations via an interactive menu.
+  static description = `
+Start an interactive chat session with Grok 3, an AI assistant from xAI...
+` // Keep full description
+  static examples = [
+    '$ z grok chat',
+    'Start a chat session, resuming the active conversation or creating a new one if none exists.',
+    '',
+    '$ z grok chat -v',
+    'Run in visible mode to see the browser UI, useful for debugging or CAPTCHA resolution.',
+    '',
+    '$ z grok chat -c <conversation-id>',
+    'Resume a specific conversation by ID, overriding the active one in config.',
+    '',
+    '$ z grok chat -n',
+    'Force a new conversation, ignoring any active conversation ID in config.',
+    '',
+    '$ z grok chat -f "./docs/*.md" -t file',
+    'Start a chat with up to 10 files uploaded from ./docs/*.md and enable the "file" tool for JSON responses.',
+    '',
+    '$ z grok chat -v -n -t file',
+    'Start a new conversation in visible mode with the "file" tool enabled.'
+  ]
+  static flags = {
+    conversation: Flags.string({ char: 'c', description: 'Use a specific conversation ID', name: 'conversation-id' }),
+    files: Flags.string({ char: 'f', description: 'Glob pattern for files to upload', name: 'files' }),
+    visible: Flags.boolean({ char: 'v', description: 'Run with visible browser', name: 'visible', default: false }),
+    tools: Flags.string({ char: 't', description: 'Enable a specific tool', name: 'tools' }),
+    new: Flags.boolean({ char: 'n', description: 'Force a new conversation', name: 'new', default: false })
+  }
 
-Features:
-- Persistent conversation IDs stored in config (~/.config/z/config.json)
-- File uploads via glob patterns or interactive file browser (max 10 files per message)
-- Tool integration (e.g., 'file' tool for JSON-based file writing)
-- Browser visibility toggle for debugging or manual interaction
-- Menu-driven options (: for menu) and special commands (:ls, :cd)
-- Automatic new conversation creation if none specified, with optional override
+  async run(): Promise<void> {
+    const { flags } = await this.parse(Chat)
+    const page = await this.setupBrowser('https://grok.com', undefined, !flags.visible)
 
-Requires a valid Grok cookie configured via 'zapai grok:config' for authentication.
-`
+    const commandRegistry = new CommandRegistry()
+    const menuHandler = new MenuHandler()
+    const controller = new ChatController(
+      page,
+      commandRegistry,
+      menuHandler,
+      flags.conversation || '',
+      this.config.configDir
+    )
 
-    static examples = [
-        '$ z grok chat',
-        'Start a chat session, resuming the active conversation or creating a new one if none exists.',
-        '',
-        '$ z grok chat -v',
-        'Run in visible mode to see the browser UI, useful for debugging or CAPTCHA resolution.',
-        '',
-        '$ z grok chat -c <conversation-id>',
-        'Resume a specific conversation by ID, overriding the active one in config.',
-        '',
-        '$ z grok chat -n',
-        'Force a new conversation, ignoring any active conversation ID in config.',
-        '',
-        '$ z grok chat -f "./docs/*.md" -t file',
-        'Start a chat with up to 10 files uploaded from ./docs/*.md and enable the "file" tool for JSON responses.',
-        '',
-        '$ z grok chat -v -n -t file',
-        'Start a new conversation in visible mode with the "file" tool enabled.'
-    ]
-
-    static flags = {
-        conversation: Flags.string({
-                                       char: 'c',
-                                       description: 'Use a specific conversation ID to resume an existing chat, overriding the active ID in config.',
-                                       name: 'conversation-id'
-                                   }),
-        files: Flags.string({
-                                char: 'f',
-                                description: 'Glob pattern for files to upload before starting the chat (e.g., "./docs/*.txt"). Max 10 files will be uploaded and sent per message.',
-                                name: 'files'
-                            }),
-        visible: Flags.boolean({
-                                   char: 'v',
-                                   description: 'Run with a visible browser window (non-headless mode) instead of headless. Useful for manual interaction or debugging.',
-                                   name: 'visible',
-                                   default: false
-                               }),
-        tools: Flags.string({
-                                char: 't',
-                                description: 'Enable a specific tool for the session (e.g., "file" to process JSON responses and write files). Only one tool can be active at a time.',
-                                name: 'tools'
-                            }),
-        new: Flags.boolean({
-                               char: 'n',
-                               description: 'Force the creation of a new conversation, ignoring any active conversation ID in the config. Useful for starting fresh without modifying config.',
-                               name: 'new',
-                               default: false
-                           })
+    try {
+      await controller.run(flags)
+    } catch (error) {
+      this.log(chalk.red(`Error: ${(error as Error).message}`))
+    } finally {
+      await this.cleanup()
     }
-
-    private page!: Page
-    private conversationId: string = ''
-    private enabledTool: GrokTool | null = null
-    private fileIds: string[] = []
-    private chatStreamer!: ChatStreamer
-    private initialParentResponseId: string = ''
-    private grokConfig!: ConfigGrok
-    private fileUploader!: FileUploader
-    private conversationManager!: ConversationManager
-    private chatActive: boolean = false
-    private cwd: string = process.cwd() // Track current working directory
-    private cwdDisplay: string = this.formatCwd(process.cwd()) // Formatted CWD for display
-
-    async run(): Promise<void> {
-        const { flags } = await this.parse(Chat)
-        await this.initialize(flags)
-
-        try {
-            await this.setupChatPage(flags.visible)
-            if (flags.files) {
-                await this.uploadFiles(flags.files)
-            }
-
-            this.log(chalk.blue('Interactive chat started. Type ') + chalk.yellow(':') + chalk.blue(' for menu, ') + chalk.yellow('\\q') + chalk.blue(' to exit'))
-            await this.chatLoop(flags.visible)
-        } catch (error) {
-            this.log(chalk.red(`Error: ${(error as Error).message}`))
-        } finally {
-            await this.cleanup()
-        }
-    }
-
-    private async initialize(flags: any): Promise<void> {
-        this.grokConfig = await loadGrokConfig(this.config.configDir)
-        if (flags.new) {
-            this.conversationId = ''
-            this.log(chalk.yellow('Starting a new conversation (ignoring active ID)'))
-        } else {
-            this.conversationId = flags.conversation || this.grokConfig.activeConversationId || ''
-            if (this.conversationId && this.conversationId !== this.grokConfig.activeConversationId) {
-                this.grokConfig.activeConversationId = this.conversationId
-                await saveGrokConfig(this.config.configDir, this.grokConfig)
-                this.log(chalk.yellow(`Active conversation set to: ${this.conversationId}`))
-            }
-        }
-    }
-
-    private async setupChatPage(visible: boolean): Promise<void> {
-        const url = this.conversationId ? `https://grok.com/chat/${this.conversationId}` : 'https://grok.com'
-        this.page = await this.setupBrowser(url, undefined, !visible)
-        this.fileUploader = new FileUploader(this.page, this.fileIds)
-        this.conversationManager = new ConversationManager(this.page)
-        this.chatStreamer = new ChatStreamer(this.page, this.conversationId, this.initialParentResponseId)
-
-        this.browser!.on('disconnected', () => {
-            this.log(chalk.blue('Browser closed. Ending chat session...'))
-            this.chatActive = false
-            process.exit(0)
-        })
-
-        if (this.conversationId) {
-            this.initialParentResponseId = (await this.conversationManager.loadConversationHistory(this.conversationId)) || ''
-            if (this.initialParentResponseId) {
-                this.chatStreamer = new ChatStreamer(this.page, this.conversationId, this.initialParentResponseId)
-            }
-        }
-
-        try {
-            await this.page.waitForSelector('textarea[aria-label="Ask Grok anything"]', { timeout: 30000 })
-        } catch (error) {
-            this.log(chalk.red('Timed out waiting for chat UI'))
-            const content = await this.page.content()
-            this.log(chalk.yellow('Page content after timeout:'), content)
-            throw new Error('Failed to load chat UI')
-        }
-    }
-
-    private formatCwd(cwd: string): string {
-        const home = homedir()
-        if (cwd.startsWith(home)) {
-            return chalk.gray(`📁 ~${cwd.slice(home.length)}`)
-        }
-        return chalk.gray(`📁 ${cwd}`)
-    }
-
-    private async uploadFiles(globPattern: string): Promise<void> {
-        const filePaths = await glob(globPattern, { cwd: this.cwd })
-        if (filePaths.length > 0) {
-            const limitedFilePaths = filePaths.slice(0, 10).map(path => resolve(this.cwd, path))
-            await this.fileUploader.uploadFiles(limitedFilePaths)
-            if (filePaths.length > 10) {
-                this.log(chalk.yellow(`Only the first 10 files were uploaded due to message limit. Total matched: ${filePaths.length}`))
-            }
-        } else {
-            this.log(chalk.yellow(`No files matched glob pattern: ${globPattern}`))
-        }
-    }
-
-    private async chatLoop(verbose: boolean): Promise<void> {
-        this.chatActive = true
-        while (this.chatActive) {
-            this.log(this.cwdDisplay) // Display cached CWD
-            const userInput = await input({ message: chalk.green('You:') })
-
-            if (userInput.trim() === '\\q') {
-                this.chatActive = false
-            } else if (userInput.trim() === ':') {
-                await this.showMenu()
-            } else if (userInput.trim() === ':ls') {
-                try {
-                    const files = readdirSync(this.cwd)
-                    this.log(chalk.blue('Directory contents:'))
-                    files.forEach(file => this.log(chalk.white(file)))
-                } catch (error) {
-                    this.log(chalk.red(`Failed to list directory: ${(error as Error).message}`))
-                }
-            } else if (userInput.trim().startsWith(':cd')) {
-                const args = userInput.trim().split(' ').slice(1)
-                if (args.length === 0) {
-                    this.log(chalk.yellow('Usage: :cd <path>'))
-                } else {
-                    const newDir = resolve(this.cwd, args.join(' '))
-                    try {
-                        process.chdir(newDir)
-                        this.cwd = newDir
-                        this.cwdDisplay = this.formatCwd(newDir) // Update cached display
-                        this.log(chalk.green(`Changed directory to: ${this.cwd}`))
-                    } catch (error) {
-                        this.log(chalk.red(`Failed to change directory: ${(error as Error).message}`))
-                    }
-                }
-            } else {
-                await this.chatStreamer.streamChat(userInput, this.fileIds, this.enabledTool, verbose)
-                if (!this.conversationId && this.chatStreamer.getConversationId()) {
-                    this.conversationId = this.chatStreamer.getConversationId()
-                    this.grokConfig.activeConversationId = this.conversationId
-                    await saveGrokConfig(this.config.configDir, this.grokConfig)
-                }
-                this.fileIds = [] // Clear fileIds after each message
-            }
-        }
-        this.log(chalk.blue('Chat session ended'))
-    }
-
-    private async showMenu(): Promise<void> {
-        const choices = [
-            { name: 'Toggle Tool', value: 'tool' },
-            { name: 'Upload Files (Glob Pattern)', value: 'glob' },
-            { name: 'Upload Files (Browse)', value: 'browse' },
-            { name: 'Save Point in Time', value: 'save' },
-            { name: 'Load Point in Time', value: 'load' },
-            { name: 'Back to Chat', value: 'back' }
-        ]
-        const action = await select({
-                                        message: chalk.blue('Chat Menu:'),
-                                        choices
-                                    })
-
-        switch (action) {
-            case 'tool':
-                await this.toggleTool()
-                break
-            case 'glob':
-                await this.uploadMoreFilesGlob()
-                break
-            case 'browse':
-                await this.uploadMoreFilesBrowse()
-                break
-            case 'save':
-                await this.savePointInTime()
-                break
-            case 'load':
-                await this.loadPointInTime()
-                break
-            case 'back':
-                break
-        }
-    }
-
-    private async toggleTool(): Promise<void> {
-        console.log(chalk.blue(`Available tools in registry: ${JSON.stringify(Object.keys(toolRegistry))}`))
-        const toolChoices = Object.values(toolRegistry).map(tool => ({
-            name: `${tool.name} - ${tool.description}`,
-            value: tool.name,
-            checked: this.enabledTool?.name === tool.name
-        }))
-        toolChoices.unshift({ name: 'None', value: 'none', checked: !this.enabledTool })
-        const selectedToolName = await select({
-                                                  message: chalk.blue('Select active tool:'),
-                                                  choices: toolChoices
-                                              })
-        this.enabledTool = selectedToolName === 'none' ? null : toolRegistry[selectedToolName]
-        this.log(chalk.green(`Active tool: ${this.enabledTool ? this.enabledTool.name : 'none'}`))
-    }
-
-    private async uploadMoreFilesGlob(): Promise<void> {
-        const pattern = await input({ message: chalk.blue('Enter glob pattern for files to upload (e.g., "./docs/*.txt", max 10 files):') })
-        if (pattern) {
-            await this.uploadFiles(pattern)
-        }
-    }
-
-    private async uploadMoreFilesBrowse(): Promise<void> {
-        const selectedFiles: string[] = []
-        let lastDir: string = process.cwd() // Start with current working directory
-
-        while (selectedFiles.length < 10) {
-            const filePath = await fileSelector({
-                                                    message: chalk.blue(`Select file ${selectedFiles.length + 1}/10 (Arrow keys to navigate, Enter to confirm, Esc/Ctrl+C to finish):`),
-                                                    basePath: lastDir,
-                                                    type: 'file',
-                                                    pageSize: 10,
-                                                    allowCancel: true,
-                                                    cancelText: '*'
-                                                })
-
-            if (filePath === '*') { // User canceled
-                this.log(chalk.yellow('File selection canceled'))
-                break
-            } else if (!selectedFiles.includes(filePath)) { // Avoid duplicates
-                selectedFiles.push(filePath)
-                lastDir = dirname(filePath) // Update lastDir to the selected file's directory
-                this.log(chalk.green(`Selected: ${filePath}`))
-            } else {
-                this.log(chalk.yellow(`File already selected: ${filePath}`))
-            }
-        }
-
-        if (selectedFiles.length > 0) {
-            const limitedFilePaths = selectedFiles.slice(0, 10) // Cap at 10 files
-            await this.fileUploader.uploadFiles(limitedFilePaths)
-            this.log(chalk.green(`Uploaded ${limitedFilePaths.length} file(s)`))
-        } else {
-            this.log(chalk.yellow('No files selected'))
-        }
-    }
-
-    private async savePointInTime(): Promise<void> {
-        const name = await input({ message: chalk.blue('Enter name for this point in time:') })
-        if (name) {
-            const lastResponseId = this.chatStreamer.getLastResponseId()
-            if (lastResponseId) {
-                const label = `${this.conversationId}-${name}`
-                const key = label
-                if (!this.grokConfig.savedPoints) {
-                    this.grokConfig.savedPoints = {}
-                }
-                this.grokConfig.savedPoints[key] = { label, previousResponseId: lastResponseId }
-                await saveGrokConfig(this.config.configDir, this.grokConfig)
-                this.log(chalk.green(`Saved point '${label}' with responseId: ${lastResponseId}`))
-            } else {
-                this.log(chalk.yellow('No response ID available to save'))
-            }
-        } else {
-            this.log(chalk.red('Name cannot be empty'))
-        }
-    }
-
-    private async loadPointInTime(): Promise<void> {
-        if (Object.keys(this.grokConfig.savedPoints).length === 0) {
-            this.log(chalk.yellow('No saved points available'))
-            return
-        }
-
-        const choices = Object.entries(this.grokConfig.savedPoints).map(([key, point]) => ({
-            name: `${point.label} (responseId: ${point.previousResponseId})`,
-            value: key
-        }))
-        const selectedKey = await select({
-                                             message: chalk.blue('Select a point in time to load:'),
-                                             choices
-                                         })
-
-        const selectedPoint = this.grokConfig.savedPoints[selectedKey]
-        this.conversationId = crypto.randomUUID()
-        this.chatStreamer = new ChatStreamer(this.page, this.conversationId, selectedPoint.previousResponseId)
-        this.fileIds = []
-        this.grokConfig.activeConversationId = this.conversationId
-        await saveGrokConfig(this.config.configDir, this.grokConfig)
-        this.log(chalk.green(`Loaded point '${selectedPoint.label}' with responseId: ${selectedPoint.previousResponseId} in new conversation: ${this.conversationId}`))
-    }
+  }
 }
