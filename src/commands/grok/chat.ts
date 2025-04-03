@@ -174,12 +174,11 @@ Requires a valid Grok cookie configured via 'z grok config' for authentication.
             } else if (userInput.trim() === ':') {
                 await this.showMenu()
             } else {
-                const response = await this.chatStreamer.streamChat(userInput, this.fileIds, this.enabledTool, verbose)
+                await this.chatStreamer.streamChat(userInput, this.fileIds, this.enabledTool, verbose)
                 if (!this.conversationId && this.chatStreamer.getConversationId()) {
                     this.conversationId = this.chatStreamer.getConversationId()
                     this.grokConfig.activeConversationId = this.conversationId
                     await saveGrokConfig(this.config.configDir, this.grokConfig)
-                    this.log(chalk.yellow(`Active conversation set to: ${this.conversationId}`))
                 }
                 this.fileIds = [] // Clear fileIds after each message
             }

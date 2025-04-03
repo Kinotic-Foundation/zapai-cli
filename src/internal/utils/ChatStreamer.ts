@@ -89,27 +89,31 @@ export class ChatStreamer {
                         this.conversationId = value.conversation.conversationId
                     }
 
-                    if (value?.token && typeof value.token === 'string' && value.token !== '' && !tool) {
+                    const token = value?.token || value?.response?.token
+                    if (token && typeof token === 'string' && token !== '') {
                         if (!spinnerStopped) {
                             spinner.stop()
                             spinnerStopped = true
                         }
-                        fullResponse += value.token
-                        if (tool && verbose) {
-                            process.stdout.write(chalk.gray(value.token))
-                        } else if (!tool) {
-                            process.stdout.write(chalk.white(value.token))
+                        fullResponse += token
+                        if (verbose && tool) {
+                            process.stdout.write(chalk.gray(token))
+                        } else if(!tool){
+                            process.stdout.write(chalk.white(token))
                         }
-                    } else if (value?.modelResponse) {
-                        if (!spinnerStopped) {
-                            spinner.stop()
-                            spinnerStopped = true
-                        }
-                        fullResponse = value.modelResponse.message
-                        this.lastResponseId = value.modelResponse.responseId
-                        modelResponse = value.modelResponse
-                        if (!tool) {
-                            process.stdout.write(chalk.white(fullResponse))
+                    } else {
+                        const mr = value?.modelResponse || value?.response?.modelResponse
+                        if (mr) {
+                            if (!spinnerStopped) {
+                                spinner.stop()
+                                spinnerStopped = true
+                            }
+                            fullResponse = mr.message
+                            this.lastResponseId = mr.responseId
+                            modelResponse = mr
+                            if (!tool) {
+                                process.stdout.write(chalk.white(fullResponse))
+                            }
                         }
                     }
                 })

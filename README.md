@@ -1,8 +1,24 @@
 @kinotic/zapai-cli
 =================
 
-The CLI to help you move fast!
+# ZapAI CLI ⚡
 
+**Chat fast, work smart, zap into AI awesomeness—experimentally!**
+
+Welcome to **ZapAI**, the CLI that turbocharges your conversations with AI powerhouses like Grok 3 (xAI) and ChatGPT (OpenAI). Tired of sluggish web UIs or juggling browser tabs? ZapAI brings lightning-fast, interactive AI chats to your terminal—upload files, wield tools, save sessions, and switch AIs with a few keystrokes. Whether you're brainstorming with Grok or querying ChatGPT, ZapAI’s got your back with a snappy, extensible interface that fits your workflow.
+
+### Why ZapAI?
+- **Speed**: Zap into AI chats instantly—no browser bloat, just pure terminal velocity.
+- **Power**: Supports Grok and ChatGPT with file uploads, tools (e.g., JSON file writing), and state management.
+- **Flexibility**: Seamless new or resumed conversations, all configurable via a slick menu.
+- **Catchy**: Because who doesn’t want to `zapai grok chat` their way to brilliance?
+
+### ⚠️ Disclaimer
+**ZapAI is an experimental tool—use at your own risk!** All features are in early development and may break, change, or zap out unexpectedly. This CLI interacts with Grok and ChatGPT APIs, sometimes bypassing web browser protections (e.g., for Grok 3). **Do not use ZapAI in any way that violates the terms of service of Grok, ChatGPT, xAI, or OpenAI.** Respect their rules, rate limits, and usage policies—misuse could lead to account bans or legal issues. Built for fun, learning, and experimentation, not for production or mischief!
+
+Built with ❤️ by Navíd Mitchell 🤝 Grok to make AI as fast as your thoughts. Dive in, zap around, and let’s make AI work for *you*—responsibly! Issues or ideas? [Open a ticket](https://github.com/kinotic-foundation/zapai-cli/issues) or PR—we’re all about community vibes!
+
+The CLI to help you move fast—experimentally!
 
 [![oclif](https://img.shields.io/badge/cli-oclif-brightgreen.svg)](https://oclif.io)
 [![Version](https://img.shields.io/npm/v/@kinotic/z-cli.svg)](https://npmjs.org/package/@kinotic/z-cli)
@@ -13,6 +29,7 @@ The CLI to help you move fast!
 * [Usage](#usage)
 * [Commands](#commands)
 <!-- tocstop -->
+
 # Usage
 <!-- usage -->
 ```sh-session
