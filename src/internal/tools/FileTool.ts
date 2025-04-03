@@ -18,7 +18,9 @@ export class FileTool implements GrokTool {
     constructor() {}
 
     async preprocessPrompt(prompt: string): Promise<string> {
-        return `${prompt}\n\nReturn *only* a JSON object with no additional text before or after. The JSON must contain:
+        return `${prompt}\n\nFor this response and this response only. Return *only* a JSON object with no additional text before or after. 
+        Do not include any code blocks or any other characters only JSON. 
+        The JSON must contain:
 - A 'summary' field with a brief summary of your response as a string.
 - A 'files' array where each entry is an object with:
   - 'name': a descriptive file name (e.g., 'script.js' or 'readme.md'),
