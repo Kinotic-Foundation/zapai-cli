@@ -6,6 +6,7 @@ import { ChatController } from './ChatController.js'
 import { toolRegistry } from '../tools/GrokTool.js'
 import { SavedPoint, saveGrokConfig } from '../state/ConfigGrok.js'
 import * as crypto from 'crypto'
+import {ChatStreamer} from './ChatStreamer.js'
 
 interface MenuOption {
   name: string
@@ -61,11 +62,10 @@ export class MenuHandler {
             basePath: lastDir,
             type: 'file',
             pageSize: 10,
-            allowCancel: true,
-            cancelText: '*'
+            allowCancel: true
           })
 
-          if (filePath === '*') {
+          if (filePath === 'canceled') {
             console.log(chalk.yellow('File selection canceled'))
             break
           } else if (!selectedFiles.includes(filePath)) {
