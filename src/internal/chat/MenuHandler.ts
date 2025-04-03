@@ -14,12 +14,12 @@ interface MenuOption {
   action: (controller: ChatController) => Promise<void>
 }
 
-// Manages the interactive menu for chat options
+// Provides an interactive menu for managing chat options
 export class MenuHandler {
   private options: MenuOption[] = []
 
   constructor() {
-    // Toggle Tool: Allows enabling/disabling a tool
+    // Option to toggle tools on or off
     this.options.push({
       name: 'Toggle Tool',
       description: 'Enable or disable a tool',
@@ -38,7 +38,6 @@ export class MenuHandler {
       }
     })
 
-    // Upload Files (Glob): Uploads files using a glob pattern
     this.options.push({
       name: 'Upload Files (Glob Pattern)',
       description: 'Upload files using a glob pattern',
@@ -48,7 +47,6 @@ export class MenuHandler {
       }
     })
 
-    // Upload Files (Browse): Interactive file selection
     this.options.push({
       name: 'Upload Files (Browse)',
       description: 'Interactively browse and select files to upload',
@@ -87,7 +85,6 @@ export class MenuHandler {
       }
     })
 
-    // Save Point: Saves the current conversation state
     this.options.push({
       name: 'Save Point in Time',
       description: 'Save the current conversation state',
@@ -113,7 +110,6 @@ export class MenuHandler {
       }
     })
 
-    // Load Point: Loads a previously saved conversation state
     this.options.push({
       name: 'Load Point in Time',
       description: 'Load a previously saved conversation state',

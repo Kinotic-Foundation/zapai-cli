@@ -5,7 +5,7 @@ import { Page } from 'puppeteer'
 import { Writable } from 'stream'
 import { GrokModelResponse, GrokTool } from '../tools/GrokTool.js'
 
-// Handles streaming chat responses from the Grok API
+// Manages real-time streaming of chat responses from the Grok API
 export class ChatStreamer {
   private lastResponseId: string
   private conversationId: string
@@ -15,7 +15,7 @@ export class ChatStreamer {
     this.lastResponseId = initialParentResponseId
   }
 
-  // Streams the chat response, processing tokens and applying tools if enabled
+  // Streams chat responses, handling tokens and applying tools if specified
   async streamChat(userInput: string, fileIds: string[], tool: GrokTool | null, verbose: boolean = false): Promise<string> {
     const spinner = ora('Grok is typing...').start()
     try {

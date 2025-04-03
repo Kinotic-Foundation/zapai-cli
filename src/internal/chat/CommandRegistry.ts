@@ -9,12 +9,12 @@ interface ChatCommand {
   execute(controller: ChatController, args: string[]): Promise<void>
 }
 
-// Manages special commands like :cd and :ls
+// Registers and executes special chat commands like :cd and :ls
 export class CommandRegistry {
   private commands: Map<string, ChatCommand> = new Map()
 
   constructor() {
-    // :cd command to change directory
+    // Command to change the current working directory
     this.register({
       name: 'cd',
       description: 'Change working directory',
@@ -33,7 +33,7 @@ export class CommandRegistry {
         }
       }
     })
-    // :ls command to list directory contents
+    // Command to list contents of the current directory
     this.register({
       name: 'ls',
       description: 'List directory contents',

@@ -9,6 +9,7 @@ interface FileEntry {
     body: string
 }
 
+// Implements a tool to process responses as JSON and write files to the filesystem
 export class FileTool implements GrokTool {
     name = 'file'
     description = 'Requests responses as JSON with a summary and files array, then writes them to the filesystem within the current directory'
@@ -17,6 +18,7 @@ export class FileTool implements GrokTool {
 
     constructor() {}
 
+    // Modifies the prompt to request a JSON response with specific structure
     async preprocessPrompt(prompt: string): Promise<string> {
         return `${prompt}\n\nFor this response and this response only. Return *only* a JSON object with no additional text before or after. 
         Do not include any code blocks or any other characters only JSON. 

@@ -12,7 +12,7 @@ import { Page } from 'puppeteer'
 import { ConfigGrok, loadGrokConfig, saveGrokConfig } from '../state/ConfigGrok.js'
 import { GrokTool } from '../tools/GrokTool.js'
 
-// Orchestrates the chat session, managing browser interaction and user input
+// Controls the lifecycle and interactions of a Grok chat session
 export class ChatController {
   private chatActive = false
   private cwd = process.cwd()
@@ -39,7 +39,7 @@ export class ChatController {
     this.grokConfig = {} as ConfigGrok
   }
 
-  // Main entry point to start the chat session
+  // Initiates the chat session with browser setup and user interaction loop
   async run(flags: { visible: boolean; files?: string; new?: boolean; conversation?: string }): Promise<void> {
     this.grokConfig = await loadGrokConfig(this.configDir)
     await this.initializeConversation(flags)
@@ -50,7 +50,6 @@ export class ChatController {
     await this.chatLoop(flags.visible)
   }
 
-  // Sets up the initial conversation ID based on flags or config
   private async initializeConversation(flags: { new?: boolean; conversation?: string }): Promise<void> {
     if (flags.new) {
       this.conversationId = ''
@@ -65,7 +64,6 @@ export class ChatController {
     }
   }
 
-  // Configures the browser page and loads conversation history if applicable
   private async setupChatPage(visible: boolean): Promise<void> {
     const url = this.conversationId ? `https://grok.com/chat/${this.conversationId}` : 'https://grok.com'
     await this.page.goto(url, { waitUntil: 'networkidle2' })
@@ -97,7 +95,6 @@ export class ChatController {
     }
   }
 
-  // Main loop handling user input and chat interactions
   private async chatLoop(verbose: boolean): Promise<void> {
     this.chatActive = true
     while (this.chatActive) {
@@ -119,13 +116,11 @@ export class ChatController {
     console.log(chalk.blue('Chat session ended'))
   }
 
-  // Uploads files based on a glob pattern
   private async uploadFiles(globPattern: string): Promise<void> {
     const paths = globPattern.split(',').map(p => resolve(this.cwd, p))
     await this.fileUploader.uploadFiles(paths)
   }
 
-  // Updates the conversation ID if a new one is generated
   private updateConversationId(): void {
     if (!this.conversationId && this.chatStreamer.getConversationId()) {
       this.conversationId = this.chatStreamer.getConversationId()
@@ -134,7 +129,6 @@ export class ChatController {
     }
   }
 
-  // Formats the current working directory for display
   private formatCwd(): string {
     const home = homedir()
     return this.cwd.startsWith(home) ? chalk.gray(`📁 ~${this.cwd.slice(home.length)}`) : chalk.gray(`📁 ${this.cwd}`)

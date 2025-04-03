@@ -1,9 +1,11 @@
 import chalk from 'chalk'
 import { Page } from 'puppeteer'
 
+// Handles loading and managing conversation history
 export class ConversationManager {
     constructor(private page: Page) {}
 
+    // Loads the history of a conversation to maintain context
     async loadConversationHistory(conversationId: string): Promise<string | undefined> {
         const historyResponse = await this.page.evaluate(async (url) => {
             const response = await fetch(url, {

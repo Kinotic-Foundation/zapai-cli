@@ -1,3 +1,4 @@
+// Defines the structure and interface for Grok tools and responses
 export interface GrokModelResponse {
     responseId: string
     message: string // JSON string for FileTool, plain text otherwise
@@ -33,4 +34,5 @@ export interface GrokTool {
     postprocessResponse(response: GrokModelResponse): Promise<string>
 }
 
+// Registry to hold available tools
 export const toolRegistry: { [key: string]: GrokTool } = {}

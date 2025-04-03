@@ -6,7 +6,7 @@ import { MenuHandler } from '../../internal/chat/MenuHandler.js'
 import { BaseGrokCommand } from '../../internal/BaseGrokCommand.js'
 import '../../internal/tools/FileTool.js' // Import to register tools in toolRegistry
 
-// CLI command to start an interactive Grok chat session
+// Defines the CLI command to initiate an interactive Grok chat session
 export default class Chat extends BaseGrokCommand {
   static description = `
 Start an interactive chat session with Grok 3, an AI assistant from xAI...
@@ -38,6 +38,7 @@ Start an interactive chat session with Grok 3, an AI assistant from xAI...
     new: Flags.boolean({ char: 'n', description: 'Force a new conversation', name: 'new', default: false })
   }
 
+  // Executes the chat command with the provided flags
   async run(): Promise<void> {
     const { flags } = await this.parse(Chat)
     const page = await this.setupBrowser('https://grok.com', undefined, !flags.visible)

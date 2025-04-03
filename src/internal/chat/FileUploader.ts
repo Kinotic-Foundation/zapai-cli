@@ -3,9 +3,11 @@ import path from 'path'
 import chalk from 'chalk'
 import { Page } from 'puppeteer'
 
+// Facilitates uploading files to the Grok chat session
 export class FileUploader {
     constructor(private page: Page, private fileIds: string[]) {}
 
+    // Uploads files and stores their IDs for attachment to messages
     async uploadFiles(paths: string[]): Promise<void> {
         for (const filePath of paths) {
             try {
