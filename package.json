@@ -1,0 +1,102 @@
+{
+  "name": "@kinotic/zapai-cli",
+  "description": "The CLI to help you move fast!",
+  "version": "0.1.0",
+  "author": "Navid Mitchell",
+  "bin": {
+    "zapai": "./bin/run.js"
+  },
+  "dependencies": {
+    "@inquirer/prompts": "^7.4.0",
+    "@oclif/core": "^4",
+    "@oclif/plugin-autocomplete": "^3.2.26",
+    "@oclif/plugin-help": "^6",
+    "@oclif/plugin-not-found": "^3.2.48",
+    "@streamparser/json": "^0.0.22",
+    "@streamparser/json-node": "^0.0.22",
+    "chalk": "^5.4.1",
+    "cli-progress": "^3.12.0",
+    "glob": "^11.0.1",
+    "openai": "^4.91.1",
+    "ora": "^8.2.0",
+    "puppeteer": "^24.5.0",
+    "puppeteer-extra": "^3.3.6",
+    "puppeteer-extra-plugin-stealth": "^2.11.2",
+    "shx": "^0.4.0"
+  },
+  "devDependencies": {
+    "@oclif/prettier-config": "^0.2.1",
+    "@oclif/test": "^4",
+    "@types/chai": "^5",
+    "@types/cli-progress": "^3.11.6",
+    "@types/glob": "^8.1.0",
+    "@types/mocha": "^10",
+    "@types/node": "^22",
+    "chai": "^5",
+    "eslint": "^9",
+    "eslint-config-oclif": "^6",
+    "eslint-config-prettier": "^10",
+    "mocha": "^11",
+    "oclif": "^4",
+    "tsx": "^4.19.3",
+    "typescript": "^5"
+  },
+  "pnpm": {
+    "overrides": {
+      "ajv": "^8.17.1",
+      "whatwg-url": "^14.0.0"
+    },
+    "onlyBuiltDependencies": [
+      "esbuild",
+      "puppeteer"
+    ]
+  },
+  "engines": {
+    "node": ">=22.0.0"
+  },
+  "files": [
+    "/bin",
+    "/dist",
+    "/oclif.manifest.json"
+  ],
+  "homepage": "https://github.com/Kinotic-Foundation/continuum-framework/tree/develop/continuum-js/z-cli",
+  "keywords": [
+    "AI",
+    "OpenAI",
+    "CLI",
+    "xAI",
+    "Grok"
+  ],
+  "license": "MIT",
+  "main": "dist/index.js",
+  "type": "module",
+  "oclif": {
+    "bin": "zapai",
+    "dirname": "zapai",
+    "commands": "./dist/commands",
+    "plugins": [
+      "@oclif/plugin-help",
+      "@oclif/plugin-not-found",
+      "@oclif/plugin-autocomplete"
+    ],
+    "topicSeparator": " ",
+    "topics": {
+      "gpt": {
+        "description": "ChatGPT commands, to help you move fast!"
+      },
+      "grok": {
+        "description": "Grok commands, to help you move faster!"
+      }
+    }
+  },
+  "scripts": {
+    "build": "shx rm -rf dist && tsc -b",
+    "lint": "eslint . --ext .ts",
+    "postpack": "shx rm -f oclif.manifest.json",
+    "posttest": "pnpm run lint",
+    "prepack": "oclif manifest && oclif readme",
+    "test": "mocha --forbid-only \"test/**/*.test.ts\"",
+    "version": "oclif readme && git add README.md"
+  },
+  "types": "dist/index.d.ts"
+}
