@@ -21,11 +21,12 @@ Built with ❤️ by Navíd Mitchell 🤝 Grok to make AI as fast as your though
 The CLI to help you move fast—experimentally!
 
 [![oclif](https://img.shields.io/badge/cli-oclif-brightgreen.svg)](https://oclif.io)
-[![Version](https://img.shields.io/npm/v/@kinotic/z-cli.svg)](https://npmjs.org/package/@kinotic/z-cli)
-[![Downloads/week](https://img.shields.io/npm/dw/@kinotic/z-cli.svg)](https://npmjs.org/package/@kinotic/z-cli)
+[![Version](https://img.shields.io/npm/v/@kinotic/zapai-cli.svg)](https://npmjs.org/package/@kinotic/zapai-cli)
+[![Downloads/week](https://img.shields.io/npm/dw/@kinotic/zapai-cli.svg)](https://npmjs.org/package/@kinotic/zapai-cli)
 
 
 <!-- toc -->
+* [ZapAI CLI ⚡](#zapai-cli-)
 * [Usage](#usage)
 * [Commands](#commands)
 <!-- tocstop -->
@@ -33,11 +34,11 @@ The CLI to help you move fast—experimentally!
 # Usage
 <!-- usage -->
 ```sh-session
-$ npm install -g @kinotic/z-cli
+$ npm install -g @kinotic/zapai-cli
 $ zapai COMMAND
 running command...
 $ zapai (--version)
-@kinotic/z-cli/0.1.0 darwin-arm64 node-v22.13.1
+@kinotic/zapai-cli/0.1.0 darwin-arm64 node-v22.13.1
 $ zapai --help [COMMAND]
 USAGE
   $ zapai COMMAND
@@ -53,7 +54,6 @@ USAGE
 * [`zapai gpt resetFiles`](#zapai-gpt-resetfiles)
 * [`zapai gpt resetStore`](#zapai-gpt-resetstore)
 * [`zapai gpt upload PATTERN`](#zapai-gpt-upload-pattern)
-* [`zapai grok BaseGrokCommand`](#zapai-grok-basegrokcommand)
 * [`zapai grok chat`](#zapai-grok-chat)
 * [`zapai grok config`](#zapai-grok-config)
 * [`zapai grok conversations`](#zapai-grok-conversations)
@@ -177,13 +177,6 @@ DESCRIPTION
   Upload files to a ChatGPT assistant for the file_search tool
 ```
 
-## `zapai grok BaseGrokCommand`
-
-```
-USAGE
-  $ zapai grok BaseGrokCommand
-```
-
 ## `zapai grok chat`
 
 Start an interactive chat session with Grok 3, an AI assistant from xAI. This command opens a browser session to grok.com, allowing real-time interaction with Grok. You can upload files, enable tools, save/load conversation states, and switch conversations via an interactive menu.
@@ -269,7 +262,7 @@ DESCRIPTION
   Configures the Grok CLI with a cookie
 
 EXAMPLES
-  z grok:config
+  z grok config
 ```
 
 ## `zapai grok conversations`
@@ -284,7 +277,7 @@ DESCRIPTION
   List and select Grok conversations
 
 EXAMPLES
-  z grok:conversations
+  z grok conversations
 ```
 
 ## `zapai help [COMMAND]`
