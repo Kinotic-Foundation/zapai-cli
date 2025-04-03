@@ -2,6 +2,9 @@ import { input, select } from '@inquirer/prompts'
 import { Flags } from '@oclif/core'
 import chalk from 'chalk'
 import { glob } from 'glob'
+import { dirname, resolve } from 'path'
+import { readdirSync } from 'fs'
+import { homedir } from 'os'
 import { Page } from 'puppeteer'
 import { ConfigGrok, loadGrokConfig, saveGrokConfig } from '../../internal/state/ConfigGrok.js'
 import { GrokTool, toolRegistry } from '../../internal/tools/GrokTool.js'
@@ -9,6 +12,7 @@ import { ChatStreamer } from '../../internal/utils/ChatStreamer.js'
 import { FileUploader } from '../../internal/utils/FileUploader.js'
 import { ConversationManager } from '../../internal/utils/ConversationManager.js'
 import { BaseGrokCommand } from '../../internal/BaseGrokCommand.js'
+import fileSelector from 'inquirer-file-selector'
 import '../../internal/tools/FileTool.js'
 
 export default class Chat extends BaseGrokCommand {
@@ -17,13 +21,13 @@ Start an interactive chat session with Grok 3, an AI assistant from xAI. This co
 
 Features:
 - Persistent conversation IDs stored in config (~/.config/z/config.json)
-- File uploads via glob patterns (max 10 files per message)
+- File uploads via glob patterns or interactive file browser (max 10 files per message)
 - Tool integration (e.g., 'file' tool for JSON-based file writing)
 - Browser visibility toggle for debugging or manual interaction
-- Menu-driven options: toggle tools, upload files, save/load points in time
+- Menu-driven options (: for menu) and special commands (:ls, :cd)
 - Automatic new conversation creation if none specified, with optional override
 
-Requires a valid Grok cookie configured via 'z grok config' for authentication.
+Requires a valid Grok cookie configured via 'zapai grok:config' for authentication.
 `
 
     static examples = [
@@ -86,6 +90,8 @@ Requires a valid Grok cookie configured via 'z grok config' for authentication.
     private fileUploader!: FileUploader
     private conversationManager!: ConversationManager
     private chatActive: boolean = false
+    private cwd: string = process.cwd() // Track current working directory
+    private cwdDisplay: string = this.formatCwd(process.cwd()) // Formatted CWD for display
 
     async run(): Promise<void> {
         const { flags } = await this.parse(Chat)
@@ -151,10 +157,18 @@ Requires a valid Grok cookie configured via 'z grok config' for authentication.
         }
     }
 
+    private formatCwd(cwd: string): string {
+        const home = homedir()
+        if (cwd.startsWith(home)) {
+            return chalk.gray(`📁 ~${cwd.slice(home.length)}`)
+        }
+        return chalk.gray(`📁 ${cwd}`)
+    }
+
     private async uploadFiles(globPattern: string): Promise<void> {
-        const filePaths = await glob(globPattern)
+        const filePaths = await glob(globPattern, { cwd: this.cwd })
         if (filePaths.length > 0) {
-            const limitedFilePaths = filePaths.slice(0, 10) // Cap at 10 files
+            const limitedFilePaths = filePaths.slice(0, 10).map(path => resolve(this.cwd, path))
             await this.fileUploader.uploadFiles(limitedFilePaths)
             if (filePaths.length > 10) {
                 this.log(chalk.yellow(`Only the first 10 files were uploaded due to message limit. Total matched: ${filePaths.length}`))
@@ -167,12 +181,36 @@ Requires a valid Grok cookie configured via 'z grok config' for authentication.
     private async chatLoop(verbose: boolean): Promise<void> {
         this.chatActive = true
         while (this.chatActive) {
+            this.log(this.cwdDisplay) // Display cached CWD
             const userInput = await input({ message: chalk.green('You:') })
 
             if (userInput.trim() === '\\q') {
                 this.chatActive = false
             } else if (userInput.trim() === ':') {
                 await this.showMenu()
+            } else if (userInput.trim() === ':ls') {
+                try {
+                    const files = readdirSync(this.cwd)
+                    this.log(chalk.blue('Directory contents:'))
+                    files.forEach(file => this.log(chalk.white(file)))
+                } catch (error) {
+                    this.log(chalk.red(`Failed to list directory: ${(error as Error).message}`))
+                }
+            } else if (userInput.trim().startsWith(':cd')) {
+                const args = userInput.trim().split(' ').slice(1)
+                if (args.length === 0) {
+                    this.log(chalk.yellow('Usage: :cd <path>'))
+                } else {
+                    const newDir = resolve(this.cwd, args.join(' '))
+                    try {
+                        process.chdir(newDir)
+                        this.cwd = newDir
+                        this.cwdDisplay = this.formatCwd(newDir) // Update cached display
+                        this.log(chalk.green(`Changed directory to: ${this.cwd}`))
+                    } catch (error) {
+                        this.log(chalk.red(`Failed to change directory: ${(error as Error).message}`))
+                    }
+                }
             } else {
                 await this.chatStreamer.streamChat(userInput, this.fileIds, this.enabledTool, verbose)
                 if (!this.conversationId && this.chatStreamer.getConversationId()) {
@@ -189,7 +227,8 @@ Requires a valid Grok cookie configured via 'z grok config' for authentication.
     private async showMenu(): Promise<void> {
         const choices = [
             { name: 'Toggle Tool', value: 'tool' },
-            { name: 'Upload Files', value: 'files' },
+            { name: 'Upload Files (Glob Pattern)', value: 'glob' },
+            { name: 'Upload Files (Browse)', value: 'browse' },
             { name: 'Save Point in Time', value: 'save' },
             { name: 'Load Point in Time', value: 'load' },
             { name: 'Back to Chat', value: 'back' }
@@ -203,8 +242,11 @@ Requires a valid Grok cookie configured via 'z grok config' for authentication.
             case 'tool':
                 await this.toggleTool()
                 break
-            case 'files':
-                await this.uploadMoreFiles()
+            case 'glob':
+                await this.uploadMoreFilesGlob()
+                break
+            case 'browse':
+                await this.uploadMoreFilesBrowse()
                 break
             case 'save':
                 await this.savePointInTime()
@@ -233,10 +275,45 @@ Requires a valid Grok cookie configured via 'z grok config' for authentication.
         this.log(chalk.green(`Active tool: ${this.enabledTool ? this.enabledTool.name : 'none'}`))
     }
 
-    private async uploadMoreFiles(): Promise<void> {
+    private async uploadMoreFilesGlob(): Promise<void> {
         const pattern = await input({ message: chalk.blue('Enter glob pattern for files to upload (e.g., "./docs/*.txt", max 10 files):') })
         if (pattern) {
             await this.uploadFiles(pattern)
+        }
+    }
+
+    private async uploadMoreFilesBrowse(): Promise<void> {
+        const selectedFiles: string[] = []
+        let lastDir: string = process.cwd() // Start with current working directory
+
+        while (selectedFiles.length < 10) {
+            const filePath = await fileSelector({
+                                                    message: chalk.blue(`Select file ${selectedFiles.length + 1}/10 (Arrow keys to navigate, Enter to confirm, Esc/Ctrl+C to finish):`),
+                                                    basePath: lastDir,
+                                                    type: 'file',
+                                                    pageSize: 10,
+                                                    allowCancel: true,
+                                                    cancelText: '*'
+                                                })
+
+            if (filePath === '*') { // User canceled
+                this.log(chalk.yellow('File selection canceled'))
+                break
+            } else if (!selectedFiles.includes(filePath)) { // Avoid duplicates
+                selectedFiles.push(filePath)
+                lastDir = dirname(filePath) // Update lastDir to the selected file's directory
+                this.log(chalk.green(`Selected: ${filePath}`))
+            } else {
+                this.log(chalk.yellow(`File already selected: ${filePath}`))
+            }
+        }
+
+        if (selectedFiles.length > 0) {
+            const limitedFilePaths = selectedFiles.slice(0, 10) // Cap at 10 files
+            await this.fileUploader.uploadFiles(limitedFilePaths)
+            this.log(chalk.green(`Uploaded ${limitedFilePaths.length} file(s)`))
+        } else {
+            this.log(chalk.yellow('No files selected'))
         }
     }
 
