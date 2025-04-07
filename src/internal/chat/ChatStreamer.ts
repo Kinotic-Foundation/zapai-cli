@@ -17,7 +17,7 @@ export class ChatStreamer {
 
   // Streams chat responses, handling tokens and applying tools if specified
   async streamChat(userInput: string, fileIds: string[], tool: GrokTool | null, verbose: boolean = false): Promise<string> {
-    const spinner = ora('Grok is typing...').start()
+    const spinner = ora('Grok is thinking...').start()
     try {
       let processedPrompt = userInput
       if (tool) processedPrompt = await tool.preprocessPrompt(processedPrompt)
