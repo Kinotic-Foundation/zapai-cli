@@ -109,7 +109,7 @@ export class ChatController {
         await this.commandRegistry.execute(userInput.trim(), this)
       } else {
         await this.chatStreamer.streamChat(userInput, this.fileIds, this.enabledTool, verbose)
-        this.updateConversationId()
+        await this.updateConversationId()
         this.fileIds = []
       }
     }
@@ -121,11 +121,11 @@ export class ChatController {
     await this.fileUploader.uploadFiles(paths)
   }
 
-  private updateConversationId(): void {
+  private async updateConversationId(): Promise<void> {
     if (!this.conversationId && this.chatStreamer.getConversationId()) {
       this.conversationId = this.chatStreamer.getConversationId()
       this.grokConfig.activeConversationId = this.conversationId
-      saveGrokConfig(this.configDir, this.grokConfig)
+      await saveGrokConfig(this.configDir, this.grokConfig)
     }
   }
 
