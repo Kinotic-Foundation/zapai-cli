@@ -33,7 +33,7 @@ export class ChatController {
     private configDir: string
   ) {
     this.conversationId = initialConversationId
-    this.fileUploader = new FileUploader(page, this.fileIds)
+    this.fileUploader = new FileUploader(page, this.fileIds, this.cwd) // Pass cwd to FileUploader
     this.conversationManager = new ConversationManager(page)
     this.chatStreamer = new ChatStreamer(page, this.conversationId, this.initialParentResponseId)
     this.grokConfig = {} as ConfigGrok

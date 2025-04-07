@@ -5,7 +5,7 @@ import { Page } from 'puppeteer'
 
 // Facilitates uploading files to the Grok chat session
 export class FileUploader {
-    constructor(private page: Page, private fileIds: string[]) {}
+    constructor(private page: Page, private fileIds: string[], private cwd: string = process.cwd()) {}
 
     // Uploads files and stores their IDs for attachment to messages
     async uploadFiles(paths: string[]): Promise<void> {
@@ -13,7 +13,7 @@ export class FileUploader {
             try {
                 const contentBuffer = await fs.readFile(filePath)
                 const content = contentBuffer.toString('base64')
-                const fileName = path.basename(filePath)
+                const fileName = path.relative(this.cwd, path.resolve(filePath)) // Use relative path from cwd
                 const uploadResponse = await this.page.evaluate(async (fileData) => {
                     const response = await fetch('/rest/app-chat/upload-file', {
                         method: 'POST',

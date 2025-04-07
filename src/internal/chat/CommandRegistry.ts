@@ -1,6 +1,6 @@
 import chalk from 'chalk'
 import { resolve } from 'path'
-import { readdirSync } from 'fs'
+import { readdirSync, mkdirSync, rmSync } from 'fs'
 import { ChatController } from './ChatController.js'
 
 interface ChatCommand {
@@ -44,6 +44,42 @@ export class CommandRegistry {
           files.forEach(file => console.log(chalk.white(file)))
         } catch (error) {
           console.log(chalk.red(`Failed to list directory: ${(error as Error).message}`))
+        }
+      }
+    })
+    // Command to create a new directory
+    this.register({
+      name: 'mkdir',
+      description: 'Create a new directory',
+      execute: async (controller, args) => {
+        if (args.length === 0) {
+          console.log(chalk.yellow('Usage: :mkdir <directory-name>'))
+          return
+        }
+        const dirPath = resolve(controller.getCwd(), args.join(' '))
+        try {
+          mkdirSync(dirPath)
+          console.log(chalk.green(`Created directory: ${dirPath}`))
+        } catch (error) {
+          console.log(chalk.red(`Failed to create directory: ${(error as Error).message}`))
+        }
+      }
+    })
+    // Command to remove a file or directory
+    this.register({
+      name: 'rm',
+      description: 'Remove a file or directory',
+      execute: async (controller, args) => {
+        if (args.length === 0) {
+          console.log(chalk.yellow('Usage: :rm <path>'))
+          return
+        }
+        const targetPath = resolve(controller.getCwd(), args.join(' '))
+        try {
+          rmSync(targetPath, { recursive: true, force: true })
+          console.log(chalk.green(`Removed: ${targetPath}`))
+        } catch (error) {
+          console.log(chalk.red(`Failed to remove: ${(error as Error).message}`))
         }
       }
     })
