@@ -36,7 +36,7 @@ $ npm install -g @kinotic/zapai-cli
 $ zapai COMMAND
 running command...
 $ zapai (--version)
-@kinotic/zapai-cli/0.1.1 darwin-arm64 node-v22.13.1
+@kinotic/zapai-cli/0.2.0 darwin-arm64 node-v22.13.1
 $ zapai --help [COMMAND]
 USAGE
   $ zapai COMMAND
@@ -46,11 +46,11 @@ USAGE
 
 # Grok Commands: Detailed Guide
 
-The `zapai grok` commands unlock the power of Grok 3, xAI's AI assistant, right in your terminal. Whether you're starting fresh, resuming a chat, uploading files, or wielding advanced tools, this section walks you through setup, basic usage, and advanced functionality. Let’s zap into it!
+The `zapai grok` commands unlock the power of Grok 3, xAI's AI assistant, right in your terminal. Let’s start with the mind-blowing stuff—iterative file editing—then cover the essentials to get you zapping!
 
 ## Setup with `z grok config`
 
-Before chatting with Grok, you need to configure the CLI with a valid Grok cookie for authentication. Here’s how:
+Before anything, you need to configure the CLI with a valid Grok cookie for authentication. Here’s how:
 
 1. **Run the Config Command:**
    ```sh
@@ -73,9 +73,33 @@ Before chatting with Grok, you need to configure the CLI with a valid Grok cooki
 
 **Note:** Keep your cookie safe—don’t share it publicly! Misuse may violate xAI’s terms of service.
 
+## Iterative Magic: Edit Files with Grok
+
+Imagine uploading your code, docs, or any files, then having Grok tweak them step-by-step—all from your terminal. This is ZapAI’s killer feature, blending the `:` menu and `file` tool for real-time, iterative improvements. Here’s how it works:
+
+- **Scenario:** Upload files, enable the file tool, and ask Grok to make custom changes incrementally.
+- **How It Works:**
+  1. Start a chat: `zapai grok chat`.
+  2. Upload files: `:` > `Upload Files (Glob Pattern)` > `./src/*.js`.
+  3. Enable tool: `:` > `Toggle Tool` > `file`.
+  4. Request changes: `You: Add error handling to these JavaScript files`.
+  5. Grok updates the files and the `file` tool saves them to disk.
+  6. Iterate: `You: Now add logging to those files`.
+- **Example:**
+  ```
+  You: :
+  [Select "Upload Files (Browse)" > Pick `app.js`, `utils.js`]
+  You: :
+  [Select "Toggle Tool" > "file"]
+  You: Refactor these files to use async/await
+  ```
+  - Grok processes `app.js` and `utils.js`, updates them with async/await, and the `file` tool saves the changes.
+  - Next: `You: Add comments to the updated files`.
+- **Why It’s Mind-Blowing:** This turns Grok into your AI co-editor. Update code (e.g., refactor, debug), refine docs (like this README!), or tweak any file-based project incrementally. Each change builds on the last, saved instantly, opening endless possibilities—code optimization, documentation polish, or even creative writing—all in one fluid workflow!
+
 ## Using `z grok chat`
 
-The `z grok chat` command starts an interactive session with Grok 3. It’s flexible, persistent, and packed with features. Here’s the basics and beyond:
+Now that you’re hooked, here’s the basics to get started:
 
 ### Basic Usage
 - **Start a Chat:**
@@ -110,71 +134,51 @@ The `z grok chat` command starts an interactive session with Grok 3. It’s flex
   $ zapai grok chat -t file
   ```
 
+**Note:** Flags are great for scripts, but the `:` menu (below) is your interactive superpower.
+
 ### Persistence
 - Conversation IDs are saved in `~/.config/z/config.json` as `activeConversationId`.
 - New chats generate a unique ID, which becomes the active one unless overridden with `-c` or `-n`.
 
-## Advanced Functionality
+## More Advanced Functionality
 
 ### Interactive Menu (`:`)
-Type `:` and Enter during a chat to open the menu. It’s your control hub for advanced features:
+Type `:` and Enter at the `You:` prompt to access this dynamic control hub. Beyond the iterative editing above, here’s what else it offers:
 
 1. **Toggle Tool:**
-   - Enable/disable tools like `file` (writes JSON responses to disk).
-   - Example: Select `file` to process structured outputs.
+   - Enable/disable tools like `file`.
+   - Example: `:` > `Toggle Tool` > `file` > `You: Create a JSON config`.
 
 2. **Upload Files (Glob Pattern):**
-   - Enter a glob (e.g., `./docs/*.txt`) to upload up to 10 files.
-   - Files attach to your next message for Grok to analyze.
+   - Upload up to 10 files with a glob (e.g., `./docs/*.txt`).
+   - Example: `:` > `Upload Files (Glob Pattern)` > `./data/*.csv` > `You: Summarize these files`.
 
 3. **Upload Files (Browse):**
-   - Interactively browse and select files using arrow keys.
-   - Great for precise uploads without typing paths.
+   - Browse and select files interactively.
+   - Example: `:` > `Upload Files (Browse)` > Pick `report.pdf` > `You: Summarize this PDF`.
 
 4. **Save Point in Time:**
-   - Save the current conversation state with a name (e.g., `brainstorm-v1`).
-   - Stores the last response ID in `config.json` under `savedPoints`.
+   - Bookmark your current state (e.g., `brainstorm-v1`).
+   - Example: `:` > `Save Point in Time` > `session-2025`.
 
 5. **Load Point in Time:**
-   - Pick a saved state to fork into a new conversation.
-   - Preserves context from that point onward.
+   - Fork from a saved state into a new chat.
+   - Example: `:` > `Load Point in Time` > `session-2025` > `You: Expand on this`.
 
 ### Commands (e.g., `:cd`, `:ls`)
-Prefix commands with `:` for file system control:
-- `:cd <path>`: Change the working directory.
+Prefix with `:` for file system control:
+- `:cd <path>`: Change directory.
   ```sh
   :cd ./projects
   ```
-- `:ls`: List files in the current directory.
+- `:ls`: List files.
 - `:mkdir <name>`: Create a directory.
 - `:rm <path>`: Remove a file or directory.
 
-### Tools
-Tools enhance Grok’s responses:
-- **File Tool (`-t file`):**
-  - Preprocesses prompts and postprocesses responses as JSON.
-  - Example: Ask Grok to generate a config file, and it’ll write it to disk.
-  - Usage:
-    ```sh
-    $ zapai grok chat -t file
-    You: Create a JSON config with {"name": "test", "value": 42}
-    ```
-
-### Combining Features
-- **Upload and Analyze:**
-  ```sh
-  $ zapai grok chat -f "./data/*.csv"
-  You: Summarize these CSV files
-  ```
-- **Debug with Tools:**
-  ```sh
-  $ zapai grok chat -v -t file -n
-  ```
-- **Resume and Save:**
-  ```sh
-  $ zapai grok chat -c xyz789
-  You: : (select "Save Point in Time")
-  ```
+### Other Combinations
+- **Upload and Analyze:** `:` > `Upload Files (Glob Pattern)` > `./data/*.csv` > `You: Summarize these CSV files`.
+- **Tool Switch Mid-Chat:** `:` > `Toggle Tool` > `file` > `You: Output as JSON`.
+- **Save and Resume:** `:` > `Save Point in Time` > `draft-1` > [Later] `:` > `Load Point in Time` > `draft-1`.
 
 ## Tips & Tricks
 - **File Limits:** Max 10 files per message. Use the menu to upload more mid-session.
@@ -183,13 +187,13 @@ Tools enhance Grok’s responses:
 
 ## Example Workflow
 1. Configure: `zapai grok config`.
-2. Start with files: `zapai grok chat -f "./notes/*.md"`.
-3. Chat: `You: Summarize my notes`.
-4. Menu: `:` > "Toggle Tool" > `file`.
-5. Generate: `You: Output summaries as JSON`.
-6. Save: `:` > "Save Point in Time" > `notes-summary`.
+2. Start: `zapai grok chat`.
+3. Upload: `:` > `Upload Files (Browse)` > Select `notes.md`.
+4. Enable Tool: `:` > `Toggle Tool` > `file`.
+5. Edit: `You: Rewrite this with better headings`.
+6. Save: `:` > `Save Point in Time` > `notes-v1`.
 
-ZapAI’s Grok integration is your terminal’s AI sidekick—fast, flexible, and ready to experiment!
+ZapAI’s Grok integration is your terminal’s AI sidekick—fast, flexible, and ready to revolutionize how you work!
 
 # Commands
 <!-- commands -->
@@ -325,39 +329,22 @@ DESCRIPTION
 
 ## `zapai grok chat`
 
-Start an interactive chat session with Grok 3, an AI assistant from xAI. This command opens a browser session to grok.com, allowing real-time interaction with Grok. You can upload files, enable tools, save/load conversation states, and switch conversations via an interactive menu.
+Start an interactive chat session with Grok 3, an AI assistant from xAI...
 
 ```
 USAGE
   $ zapai grok chat [-c <value>] [-f <value>] [-v] [-t <value>] [-n]
 
 FLAGS
-  -c, --conversation=<value>  Use a specific conversation ID to resume an existing chat, overriding the active ID in
-                              config.
-  -f, --files=<value>         Glob pattern for files to upload before starting the chat (e.g., "./docs/*.txt"). Max 10
-                              files will be uploaded and sent per message.
-  -n, --new                   Force the creation of a new conversation, ignoring any active conversation ID in the
-                              config. Useful for starting fresh without modifying config.
-  -t, --tools=<value>         Enable a specific tool for the session (e.g., "file" to process JSON responses and write
-                              files). Only one tool can be active at a time.
-  -v, --visible               Run with a visible browser window (non-headless mode) instead of headless. Useful for
-                              manual interaction or debugging.
+  -c, --conversation=<value>  Use a specific conversation ID
+  -f, --files=<value>         Glob pattern for files to upload
+  -n, --new                   Force a new conversation
+  -t, --tools=<value>         Enable a specific tool
+  -v, --visible               Run with visible browser
 
 DESCRIPTION
 
-  Start an interactive chat session with Grok 3, an AI assistant from xAI. This command opens a browser session to
-  grok.com, allowing real-time interaction with Grok. You can upload files, enable tools, save/load conversation states,
-  and switch conversations via an interactive menu.
-
-  Features:
-  - Persistent conversation IDs stored in config (~/.config/z/config.json)
-  - File uploads via glob patterns (max 10 files per message)
-  - Tool integration (e.g., 'file' tool for JSON-based file writing)
-  - Browser visibility toggle for debugging or manual interaction
-  - Menu-driven options: toggle tools, upload files, save/load points in time
-  - Automatic new conversation creation if none specified, with optional override
-
-  Requires a valid Grok cookie configured via 'z grok config' for authentication.
+  Start an interactive chat session with Grok 3, an AI assistant from xAI...
 
 
 EXAMPLES
