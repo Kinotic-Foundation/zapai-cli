@@ -47,7 +47,7 @@ export class ChatController {
 
     if (flags.files) await this.uploadFiles(flags.files)
     console.log(chalk.blue('Interactive chat started. Type ') + chalk.yellow(':') + chalk.blue(' for menu, ') + chalk.yellow('\\q') + chalk.blue(' to exit'))
-    await this.chatLoop(flags.visible)
+    await this.chatLoop()
   }
 
   private async initializeConversation(flags: { new?: boolean; conversation?: string }): Promise<void> {
@@ -95,7 +95,7 @@ export class ChatController {
     }
   }
 
-  private async chatLoop(verbose: boolean): Promise<void> {
+  private async chatLoop(): Promise<void> {
     this.chatActive = true
     while (this.chatActive) {
       console.log(this.formatCwd())
@@ -108,7 +108,7 @@ export class ChatController {
       } else if (userInput.trim().startsWith(':')) {
         await this.commandRegistry.execute(userInput.trim(), this)
       } else {
-        await this.chatStreamer.streamChat(userInput, this.fileIds, this.enabledTool, verbose)
+        await this.chatStreamer.streamChat(userInput, this.fileIds, this.enabledTool)
         await this.updateConversationId()
         this.fileIds = []
       }
