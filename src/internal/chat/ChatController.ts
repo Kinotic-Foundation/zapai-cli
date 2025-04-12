@@ -110,7 +110,8 @@ export class ChatController {
       } else {
         await this.chatStreamer.streamChat(userInput, this.fileIds, this.enabledTool)
         await this.updateConversationId()
-        this.fileIds = []
+        // Clear file IDs after sending
+        this.fileIds.length = 0
       }
     }
     console.log(chalk.blue('Chat session ended'))
