@@ -31,7 +31,7 @@ export interface GrokTool {
     name: string
     description: string
     preprocessPrompt(prompt: string): Promise<string>
-    postprocessResponse(response: GrokModelResponse): Promise<string>
+    postprocessResponse(response: GrokModelResponse): Promise<void>
 }
 
 // Registry to hold available tools

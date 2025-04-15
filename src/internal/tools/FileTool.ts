@@ -13,8 +13,6 @@ interface FileEntry {
 export class FileTool implements GrokTool {
     name = 'file'
     description = 'Requests responses as JSON with a summary and files array, then writes them to the filesystem within the current directory'
-    private summary: string | null = null
-    private files: FileEntry[] = []
 
     constructor() {}
 
@@ -43,22 +41,31 @@ Ensure the files are relevant to the request and use appropriate extensions for 
         console.log(chalk.white(`Writing file: ${fullPath}`))
     }
 
-    async postprocessResponse(response: GrokModelResponse): Promise<string> {
+    async postprocessResponse(response: GrokModelResponse): Promise<void> {
         try {
-            const json = JSON.parse(response.message)
-            if (!json.summary || !Array.isArray(json.files)) {
-                return `Error: Invalid response format. Expected JSON with 'summary' and 'files'. Received: ${JSON.stringify(json)}`
+            console.log(chalk.grey('\nProcessing file tool response...'))
+            let json: any = {}
+            try {
+                json = JSON.parse(response.message)
+            } catch (e) {
+                console.log(chalk.red(`Error: Failed to parse JSON response. ${e}\nRaw response: ${response.message}`))
+                return
             }
-            this.summary = json.summary + '\n'
-            process.stdout.write(chalk.white(this.summary))
-            this.files = json.files.filter((file: FileEntry) => file.name && file.path && file.body)
-            for (const file of this.files) {
+            if (!json.summary || !Array.isArray(json.files)) {
+                console.log(chalk.red(`Error: Invalid response format. Expected JSON with 'summary' and 'files'. Received: ${response.message}`))
+            }
+            const summary = json.summary + '\n'
+            console.log(chalk.white(summary || 'No summary provided.'))
+            for (const file of json.files) {
+                if(!file.name || !file.path || !file.body) {
+                    console.warn(`Invalid file entry: ${JSON.stringify(file, null, 2)}`)
+                    continue
+                }
                 await this.writeFile(file)
             }
             console.log(chalk.white('Done! Check your directory.'))
-            return this.summary || ''
         } catch (error) {
-            return `Error processing file tool response: ${(error as Error).message}\nRaw response: ${JSON.stringify(response)}`
+            console.log(chalk.red(`Error processing file tool response: ${(error as Error).message}\nRaw response: ${JSON.stringify(response)}`))
         }
     }
 }

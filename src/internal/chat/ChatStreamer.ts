@@ -16,7 +16,7 @@ export class ChatStreamer {
   }
 
   // Streams chat responses, handling tokens and applying tools if specified
-  async streamChat(userInput: string, fileIds: string[], tool: GrokTool | null): Promise<string> {
+  async streamChat(userInput: string, fileIds: string[], tool: GrokTool | null): Promise<void> {
     const spinner = ora('Grok is thinking...').start()
     try {
       let processedPrompt = userInput
@@ -145,15 +145,19 @@ export class ChatStreamer {
         }, endpoint, payload)
       })
 
-      let finalOutput = await responsePromise
-      if (tool && modelResponse) finalOutput = await tool.postprocessResponse(modelResponse)
+      await responsePromise
+      if (tool){
+        if(modelResponse){
+          await tool.postprocessResponse(modelResponse)
+        }else{
+          process.stdout.write(chalk.red(`Tool error: No model response available`))
+        }
+      }
 
       if (!spinnerStopped) spinner.stop()
       process.stdout.write('\n')
-      return finalOutput
     } catch (error) {
       spinner.fail(chalk.red(`Chat error: ${(error as Error).message}`))
-      return ''
     }
   }
 

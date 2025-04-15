@@ -99,14 +99,14 @@ export class ChatController {
     this.chatActive = true
     while (this.chatActive) {
       console.log(this.formatCwd())
-      const userInput = await input({ message: chalk.green('You:') })
-
-      if (userInput.trim() === '\\q') {
+      let userInput = await input({ message: chalk.green('You:') })
+      userInput = userInput.trim()
+      if (userInput === '\\q') {
         this.chatActive = false
-      } else if (userInput.trim() === ':') {
+      } else if (userInput === ':') {
         await this.menuHandler.showMenu(this)
-      } else if (userInput.trim().startsWith(':')) {
-        await this.commandRegistry.execute(userInput.trim(), this)
+      } else if (userInput.startsWith(':')) {
+        await this.commandRegistry.execute(userInput, this)
       } else {
         await this.chatStreamer.streamChat(userInput, this.fileIds, this.enabledTool)
         await this.updateConversationId()
