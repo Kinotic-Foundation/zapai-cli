@@ -52,7 +52,7 @@ export class ChatStreamer {
         : 'https://grok.com/rest/app-chat/conversations/new'
 
       const responsePromise = new Promise<string>((resolve) => {
-        const timeout = setTimeout(() => resolve('Error: Response timeout after 15 minutes'), 900000)
+        const timeout = setTimeout(() => resolve('Error: Response timeout after 30 minutes'), 1800000)
         const parser = new JSONParser({ paths: ['$.result', '$.error'], keepStack: false, separator: '' })
 
         const chunkWriter = new Writable({

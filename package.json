@@ -1,7 +1,7 @@
 {
   "name": "@kinotic/zapai-cli",
   "description": "The CLI to help you move fast!",
-  "version": "0.2.0",
+  "version": "0.2.1",
   "author": "Navid Mitchell",
   "bin": {
     "zapai": "./bin/run.js"

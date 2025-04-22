@@ -26,6 +26,7 @@ export abstract class BaseGrokCommand extends Command {
                                                       '--no-sandbox',
                                                       '--disable-setuid-sandbox',
                                                   ],
+                                                  protocolTimeout: 1800000, // 30 minutes
                                               })
 
         process.on('SIGINT', async () => {
