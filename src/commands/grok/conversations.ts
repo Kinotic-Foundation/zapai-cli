@@ -1,7 +1,7 @@
 import { select } from '@inquirer/prompts'
 import chalk from 'chalk'
 import { BaseGrokCommand } from '../../internal/BaseGrokCommand.js'
-import { loadGrokConfig, saveGrokConfig } from '../../internal/state/ConfigGrok.js'
+import { loadGrokConfig, saveGrokConfig } from '../../internal/state/GrokConfig.js'
 import { HTTPResponse, Page } from 'puppeteer'
 
 interface Conversation {
@@ -14,7 +14,7 @@ interface Conversation {
 export default class Conversations extends BaseGrokCommand {
     static description = 'List and select Grok conversations'
 
-    static examples = ['z grok conversations']
+    static examples = ['zapai grok conversations']
 
     async run(): Promise<void> {
         let page: Page

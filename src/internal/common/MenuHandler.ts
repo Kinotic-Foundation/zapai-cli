@@ -4,9 +4,6 @@ import { resolve, dirname } from 'path'
 import fileSelector from 'inquirer-file-selector'
 import { ChatController } from './ChatController.js'
 import { toolRegistry } from '../tools/GrokTool.js'
-import { SavedPoint, saveGrokConfig } from '../state/ConfigGrok.js'
-import * as crypto from 'crypto'
-import {ChatStreamer} from './ChatStreamer.js'
 
 interface MenuOption {
   name: string
@@ -82,61 +79,6 @@ export class MenuHandler {
         } else {
           console.log(chalk.yellow('No files selected'))
         }
-      }
-    })
-
-    this.options.push({
-      name: 'Save Point in Time',
-      description: 'Save the current conversation state',
-      action: async (controller) => {
-        const name = await input({ message: chalk.blue('Enter name for this point in time:') })
-        if (name) {
-          const lastResponseId = controller.getChatStreamer().getLastResponseId()
-          if (lastResponseId) {
-            const label = `${controller.getChatStreamer().getConversationId()}-${name}`
-            const key = label
-            if (!controller.getGrokConfig().savedPoints) {
-              controller.getGrokConfig().savedPoints = {}
-            }
-            controller.getGrokConfig().savedPoints[key] = { label, previousResponseId: lastResponseId }
-            await saveGrokConfig(controller['configDir'], controller.getGrokConfig())
-            console.log(chalk.green(`Saved point '${label}' with responseId: ${lastResponseId}`))
-          } else {
-            console.log(chalk.yellow('No response ID available to save'))
-          }
-        } else {
-          console.log(chalk.red('Name cannot be empty'))
-        }
-      }
-    })
-
-    this.options.push({
-      name: 'Load Point in Time',
-      description: 'Load a previously saved conversation state',
-      action: async (controller) => {
-        const savedPoints = controller.getGrokConfig().savedPoints || {}
-        if (Object.keys(savedPoints).length === 0) {
-          console.log(chalk.yellow('No saved points available'))
-          return
-        }
-
-        const choices = Object.entries(savedPoints).map(([key, point]: [string, SavedPoint]) => ({
-          name: `${point.label} (responseId: ${point.previousResponseId})`,
-          value: key
-        }))
-        const selectedKey = await select({
-          message: chalk.blue('Select a point in time to load:'),
-          choices
-        })
-
-        const selectedPoint = savedPoints[selectedKey]
-        const newConversationId = crypto.randomUUID()
-        controller['conversationId'] = newConversationId
-        controller['chatStreamer'] = new ChatStreamer(controller['page'], newConversationId, selectedPoint.previousResponseId)
-        controller['fileIds'] = []
-        controller.getGrokConfig().activeConversationId = newConversationId
-        await saveGrokConfig(controller['configDir'], controller.getGrokConfig())
-        console.log(chalk.green(`Loaded point '${selectedPoint.label}' with responseId: ${selectedPoint.previousResponseId} in new conversation: ${newConversationId}`))
       }
     })
   }

@@ -3,15 +3,18 @@ import chalk from 'chalk'
 import ora from 'ora'
 import { Page } from 'puppeteer'
 import { Writable } from 'stream'
+import {GrokConfig} from '../state/GrokConfig.js'
 import { GrokModelResponse, GrokTool } from '../tools/GrokTool.js'
+import { ChatStreamer as ChatStreamerInterface } from '../common/Interfaces.js';
 
 // Manages real-time streaming of chat responses from the Grok API
-export class ChatStreamer {
-  private lastResponseId: string
-  private conversationId: string
+export class ChatStreamer implements ChatStreamerInterface{
+  private lastResponseId?: string
 
-  constructor(private page: Page, conversationId: string, initialParentResponseId: string = '') {
-    this.conversationId = conversationId
+  constructor(private page: Page,
+              private grokConfig: GrokConfig,
+              private conversationId?: string,
+              initialParentResponseId?: string) {
     this.lastResponseId = initialParentResponseId
   }
 
@@ -78,6 +81,8 @@ export class ChatStreamer {
           }
           if (!this.conversationId && value?.conversation?.conversationId) {
             this.conversationId = value.conversation.conversationId
+            this.grokConfig.activeConversationId = this.conversationId
+            this.grokConfig.save()
           }
           const token = value?.token || value?.response?.token
           if (token && typeof token === 'string' && token !== '') {
@@ -161,6 +166,4 @@ export class ChatStreamer {
     }
   }
 
-  getLastResponseId(): string { return this.lastResponseId }
-  getConversationId(): string { return this.conversationId }
 }

@@ -3,7 +3,7 @@ import { Command } from '@oclif/core'
 import chalk from 'chalk'
 import puppeteer from 'puppeteer-extra'
 import StealthPlugin from 'puppeteer-extra-plugin-stealth'
-import { loadGrokConfig } from './state/ConfigGrok.js'
+import {GrokConfig, loadGrokConfig} from './state/GrokConfig.js'
 import { Cookie, Page } from 'puppeteer'
 
 puppeteer.use(StealthPlugin())
@@ -11,11 +11,15 @@ puppeteer.use(StealthPlugin())
 export abstract class BaseGrokCommand extends Command {
     // @ts-ignore
     protected browser: puppeteer.Browser | null = null
+    protected grokConfig: GrokConfig | null = null
+
+  public async init(): Promise<void> {
+    await super.init()
+    this.grokConfig = await loadGrokConfig(this.config.configDir)
+  }
 
     protected async setupBrowser(url: string, responseHandler?: (page: Page) => void, headless: boolean = false): Promise<Page> {
-        const config = await loadGrokConfig(this.config.configDir)
-
-        if (!config.grokCookie) {
+        if (!this.grokConfig?.grokCookie) {
             this.log(chalk.red('No Grok cookie configured. Run `zapai grok config` first.'))
             throw new Error('No cookie configured')
         }
@@ -38,7 +42,7 @@ export abstract class BaseGrokCommand extends Command {
         const context = this.browser.defaultBrowserContext()
         const page = await context.newPage()
 
-        const cookieEntries = config.grokCookie.split(/;\s*|\s+/)
+        const cookieEntries = this.grokConfig.grokCookie.split(/;\s*|\s+/)
         const cookies = cookieEntries.map((cookieStr) => {
             const [name, ...valueParts] = cookieStr.split('=')
             const value = valueParts.join('=')

@@ -2,9 +2,10 @@ import fs from 'fs/promises'
 import path from 'path'
 import chalk from 'chalk'
 import { Page } from 'puppeteer'
+import { FileUploader as FileUploaderInterface } from '../common/Interfaces.js';
 
 // Facilitates uploading files to the Grok chat session
-export class FileUploader {
+export class FileUploader implements FileUploaderInterface {
     constructor(private page: Page, private fileIds: string[], private cwd: string = process.cwd()) {}
 
     // Uploads files and stores their IDs for attachment to messages
