@@ -16,9 +16,9 @@ interface FileUploadError {
 
 export class FileUploader implements FileUploaderInterface {
   constructor(
-    private fileIds: string[],
-    private cwd: string,
-    private options: WebUiOptions
+      private fileIds: string[],
+      private cwd: string,
+      private options: WebUiOptions
   ) {}
 
   async uploadFiles(paths: string[]): Promise<void> {
@@ -41,7 +41,7 @@ export class FileUploader implements FileUploaderInterface {
 
         if (!response.ok) {
           const errorJson = await response.json();
-          if (isFileUploadError(errorJson)) {
+          if (this.isFileUploadError(errorJson)) {
             throw new Error(errorJson.detail || 'Failed to upload file');
           } else {
             throw new Error('Failed to upload file: Unknown error format');
@@ -49,7 +49,7 @@ export class FileUploader implements FileUploaderInterface {
         }
 
         const result = await response.json();
-        if (isFileUploadResponse(result) && result.id) {
+        if (this.isFileUploadResponse(result) && result.id) {
           this.fileIds.push(result.id);
           console.log(chalk.green(`Uploaded file: ${fileName} (ID: ${result.id})`));
         } else {
@@ -60,12 +60,23 @@ export class FileUploader implements FileUploaderInterface {
       }
     }
   }
+
+  public getLastFileIds(): string[] {
+    return this.fileIds;
+  }
+
+  public clearFileIds(): void {
+    this.fileIds.length = 0;
+  }
+
+  private isFileUploadResponse(obj: any): obj is FileUploadResponse {
+    return obj && typeof obj === 'object' && 'id' in obj && typeof obj.id === 'string';
+  }
+
+  private isFileUploadError(obj: any): obj is FileUploadError {
+    return obj && typeof obj === 'object' && 'detail' in obj && typeof obj.detail === 'string';
+  }
+
 }
 
-function isFileUploadResponse(obj: any): obj is FileUploadResponse {
-  return obj && typeof obj === 'object' && 'id' in obj && typeof obj.id === 'string';
-}
 
-function isFileUploadError(obj: any): obj is FileUploadError {
-  return obj && typeof obj === 'object' && 'detail' in obj && typeof obj.detail === 'string';
-}

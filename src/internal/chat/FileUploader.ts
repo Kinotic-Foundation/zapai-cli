@@ -6,7 +6,9 @@ import { FileUploader as FileUploaderInterface } from '../common/Interfaces.js';
 
 // Facilitates uploading files to the Grok chat session
 export class FileUploader implements FileUploaderInterface {
-    constructor(private page: Page, private fileIds: string[], private cwd: string = process.cwd()) {}
+    constructor(private page: Page,
+                private fileIds: string[],
+                private cwd: string = process.cwd()) {}
 
     // Uploads files and stores their IDs for attachment to messages
     async uploadFiles(paths: string[]): Promise<void> {
@@ -41,4 +43,13 @@ export class FileUploader implements FileUploaderInterface {
             }
         }
     }
+
+    public getLastFileIds(): string[] {
+        return this.fileIds
+    }
+
+    public clearFileIds(): void {
+        this.fileIds.length = 0
+    }
+
 }

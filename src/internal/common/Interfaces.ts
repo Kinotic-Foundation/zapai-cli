@@ -6,5 +6,7 @@ export interface ChatStreamer {
 
 export interface FileUploader {
   uploadFiles(paths: string[]): Promise<void>;
+  getLastFileIds(): string[];
+  clearFileIds(): void;
 }
 
